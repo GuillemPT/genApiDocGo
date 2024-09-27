@@ -27,21 +27,18 @@ func getContent(files []string) {
     	for scanner.Scan() {
         	line := scanner.Text()
 
-	        // Comprobar si la línea contiene el patrón
 	        if strings.Contains(line, "@api_generate_doc") {
 	            inDocSection = true
 	            contentBuilder.WriteString(line + "\n")
-	            functionOpenCount++ // Contar la apertura de función
+	            functionOpenCount++
 	            continue
 	        }
 
-	        // Si estamos dentro de la sección de documentación, almacenamos la línea
+	
 	        if inDocSection {
 	            contentBuilder.WriteString(line + "\n")
-	            // Comprobar si hemos llegado al final de la función
 	            functionOpenCount += strings.Count(line, "{") - strings.Count(line, "}")
 	            if functionOpenCount == 0 {
-	                // Fin de la sección de documentación
 	                break
 	            }
 	        }
@@ -51,7 +48,6 @@ func getContent(files []string) {
 	        log.Fatalf("Error leyendo el archivo: %v", err)
 	    }
 
-	    // Mostrar y guardar el contenido extraído
 	    extractedContent := contentBuilder.String()
 	    if extractedContent != "" {
 	        fmt.Println("Contenido extraído")
