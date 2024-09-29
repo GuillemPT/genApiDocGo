@@ -25,8 +25,9 @@ func formatMethods(methods []string) []methodDoc {
 			}
 			if inDescription {
 				description := line
-				description = strings.Trim(description, " *")
-				methodDocIter.ResponseDescription += description
+				description = strings.Trim(description, " ")
+				description = strings.Trim(description, "*")
+				methodDocIter.Description += description
 			}
 			if strings.Contains(line, "/**") {
 				inDescription = true
@@ -35,22 +36,27 @@ func formatMethods(methods []string) []methodDoc {
 				methodDocIter.Type = "get"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
+				methodDocIter.ResponseDescription = "OK"
 			} else if strings.Contains(line, "post") {
 				methodDocIter.Type = "post"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
+				methodDocIter.ResponseDescription = "OK"
 			} else if strings.Contains(line, "put") {
 				methodDocIter.Type = "put"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
+				methodDocIter.ResponseDescription = "OK"
 			} else if strings.Contains(line, "delete") {
 				methodDocIter.Type = "delete"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
+				methodDocIter.ResponseDescription = "OK"
 			} else if strings.Contains(line, "patch") {
 				methodDocIter.Type = "patch"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
+				methodDocIter.ResponseDescription = "OK"
 			}
 		}
 
