@@ -7,9 +7,9 @@ const PORT = process.env.PORT || 3000;
  */ 
 app.use(express.json());
 
+// @api_generate_doc
 
 /**
- * @api_generate_doc
  * Home route
  */
 app.get('/', (req, res) => {

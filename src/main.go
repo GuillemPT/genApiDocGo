@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"log"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -12,47 +15,53 @@ func main() {
 	 * (by default js)
 	 * 2 - directory to browse the files to generate the documentation
 	 * (by default current)
-	 * 3 - destination to write the generated documentation
-	 * (by default current directory with the name that doc.txt)
-	 * 4 - exclude directories (all arguments based on it are considered to be
+	 * 3 - exclude directories (all arguments based on it are considered to be
 	 * part of the same)
 	 */
+	fmt.Println("Start GenApiDocGo version: ", Version)
 
-    var targetDirectoryPath string
-    var writeDocumentationDirectoryPath string
-    var filesType string
-	var excludeDirectories []string
-	numberOfArgs := len(os.Args)
+	var filesType string
+	var targetDirectoryPath string
+	var excludeDirectories string
 
-	switch numberOfArgs {
-	case 1:
-		filesType = "js"
-		targetDirectoryPath, _ = os.Getwd()
-		writeDocumentationDirectoryPath, _ = os.Getwd()
-	case 2:
-		filesType = os.Args[1]
-		targetDirectoryPath, _ = os.Getwd()
-		writeDocumentationDirectoryPath, _ = os.Getwd()
-	case 3:
-		filesType = os.Args[1]
-		targetDirectoryPath = os.Args[2]
-		writeDocumentationDirectoryPath, _ = os.Getwd()
-	case 4:
-		filesType = os.Args[1]
-		targetDirectoryPath = os.Args[2]
-		writeDocumentationDirectoryPath = os.Args[3]
-	default:
-		filesType = os.Args[1]
-		targetDirectoryPath = os.Args[2]
-		writeDocumentationDirectoryPath = os.Args[3]
-		excludeDirectories = os.Args[4:]
+	defaultFilesType := "js"
+	defaultTargetDirectoryPath, _ := os.Getwd()
+	defaultExcludeDirectories := ""
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Println("Enter type of files to generate the documentation " +
+		"(default js): ")
+	filesType, err := reader.ReadString('\n')
+	filesType = strings.TrimSpace(filesType)
+
+	if err != nil || filesType == "" {
+		filesType = defaultFilesType
 	}
 
-	files, err := getFiles(targetDirectoryPath, filesType, excludeDirectories)
-	if err == nil {
-		getContent(files)
+	fmt.Println("Enter directory to browse the files to generate the " +
+		"documentation (default current): ")
+	targetDirectoryPath, err = reader.ReadString('\n')
+	targetDirectoryPath = strings.TrimSpace(targetDirectoryPath)
+
+	if err != nil || targetDirectoryPath == "" {
+		targetDirectoryPath = defaultTargetDirectoryPath
 	}
 
-	//! Delete the next line, now is here to not throw errors
-	fmt.Println(writeDocumentationDirectoryPath)
+	fmt.Println("Enter exclude directories: ")
+	excludeDirectories, err = reader.ReadString('\n')
+	excludeDirectories = strings.TrimSpace(excludeDirectories)
+
+	if err != nil {
+		excludeDirectories = defaultExcludeDirectories
+	}
+
+	excludeDirectoriesArr := strings.Split(excludeDirectories, " ")
+	files, err := getFiles(
+		targetDirectoryPath, filesType, excludeDirectoriesArr)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	getContent(files)
 }
