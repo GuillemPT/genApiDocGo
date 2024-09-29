@@ -63,5 +63,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	getContent(files)
+	methodsToDoc := getContent(files)
+	structedMethods := formatMethods(methodsToDoc)
+	fmt.Println(structedMethods)
 }

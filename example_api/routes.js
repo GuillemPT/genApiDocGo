@@ -7,7 +7,6 @@ const PORT = process.env.PORT || 3000;
  */ 
 app.use(express.json());
 
-// @api_generate_doc
 
 /**
  * Home route
@@ -16,6 +15,7 @@ app.get('/', (req, res) => {
     res.send('Welcome to the Home Page!');
 });
 
+// @api_generate_doc
 /**
  * About route
  */
@@ -23,7 +23,11 @@ app.get('/about', (req, res) => {
     res.send('This is the About Page!');
 });
 
-// Contact route
+// @api_generate_doc
+/** 
+ * Contact route
+ * super description
+ */
 app.get('/contact', (req, res) => {
     res.send('This is the Contact Page!');
 });
