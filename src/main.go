@@ -65,5 +65,5 @@ func main() {
 
 	methodsToDoc := getContent(files)
 	structedMethods := formatMethods(methodsToDoc)
-	fmt.Println(structedMethods)
+	writeDocument(structedMethods, targetDirectoryPath)
 }
