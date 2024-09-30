@@ -30,7 +30,6 @@ func getFiles(targetDirectoryPath string, filesType string,
 	return files, nil
 }
 
-// TODO: Move to utils
 func _pathContainsAny(path string, directories []string) bool {
 	if len(directories) == 0 {
 		return false

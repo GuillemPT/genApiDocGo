@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"genApiDocGo/internal"
 	"log"
 	"os"
 	"strings"
@@ -18,7 +19,7 @@ func main() {
 	 * 3 - exclude directories (all arguments based on it are considered to be
 	 * part of the same)
 	 */
-	fmt.Println("Start GenApiDocGo version: ", Version)
+	fmt.Println("Start GenApiDocGo version: ", internal.Version)
 
 	var filesType string
 	var targetDirectoryPath string
