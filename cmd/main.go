@@ -1,70 +1,54 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"genApiDocGo/internal"
 	"log"
 	"os"
-	"strings"
+
+	"github.com/common-nighthawk/go-figure"
 )
+
+type item struct {
+	ID         string
+	IsSelected bool
+}
 
 func main() {
 	/*
 	 * Get arguments by console, there are four optional parameters
 	 * 1 - type of files to generate the documentation
-	 * (by default js)
-	 * 2 - directory to browse the files to generate the documentation
-	 * (by default current)
-	 * 3 - exclude directories (all arguments based on it are considered to be
-	 * part of the same)
+	 * 2 - exclude directories
 	 */
-	fmt.Println("Start GenApiDocGo version: ", internal.Version)
 
-	var filesType string
+	figure.NewFigure("GenApiDocGo", "", true).Print()
+	fmt.Println("Version: ", internal.Version)
+
 	var targetDirectoryPath string
-	var excludeDirectories string
 
-	defaultFilesType := "js"
-	defaultTargetDirectoryPath, _ := os.Getwd()
-	defaultExcludeDirectories := ""
-	reader := bufio.NewReader(os.Stdin)
+	if len(os.Args) > 1 {
+		targetDirectoryPath = os.Args[1]
+	} else {
 
-	fmt.Println("Enter type of files to generate the documentation " +
-		"(default js): ")
-	filesType, err := reader.ReadString('\n')
-	filesType = strings.TrimSpace(filesType)
-
-	if err != nil || filesType == "" {
-		filesType = defaultFilesType
+		targetDirectoryPath, _ = os.Getwd()
 	}
 
-	fmt.Println("Enter directory to browse the files to generate the " +
-		"documentation (default current): ")
-	targetDirectoryPath, err = reader.ReadString('\n')
-	targetDirectoryPath = strings.TrimSpace(targetDirectoryPath)
-
-	if err != nil || targetDirectoryPath == "" {
-		targetDirectoryPath = defaultTargetDirectoryPath
-	}
-
-	fmt.Println("Enter exclude directories: ")
-	excludeDirectories, err = reader.ReadString('\n')
-	excludeDirectories = strings.TrimSpace(excludeDirectories)
+	files, directories, err := getFiles(targetDirectoryPath,
+		getSelectLanguage())
 
 	if err != nil {
-		excludeDirectories = defaultExcludeDirectories
+		log.Fatal("Error when extracting files", err)
 	}
 
-	excludeDirectoriesArr := strings.Split(excludeDirectories, " ")
-	files, err := getFiles(
-		targetDirectoryPath, filesType, excludeDirectoriesArr)
+	excludeDirectories, err := getExcludedDirectories(0, directories)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error obtaining exclude directories", err)
 	}
 
+	files = excludeFilesInBanDirectories(excludeDirectories, files)
+	fmt.Println(files)
 	methodsToDoc := getContent(files)
-	structedMethods := formatMethods(methodsToDoc)
-	writeDocument(structedMethods, targetDirectoryPath)
+	structMethods := formatMethods(methodsToDoc)
+	writeDocument(structMethods, targetDirectoryPath)
 }
