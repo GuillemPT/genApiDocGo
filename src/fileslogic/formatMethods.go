@@ -1,10 +1,10 @@
-package main
+package fileslogic
 
 import (
 	"strings"
 )
 
-type methodDoc struct {
+type MethodDoc struct {
 	Route               string
 	Type                string
 	Description         string
@@ -12,14 +12,13 @@ type methodDoc struct {
 	ResponseDescription string
 }
 
-func formatMethods(methods []string) []methodDoc {
-	var formatMethodsStruct []methodDoc
+func FormatMethods(methods []string) []MethodDoc {
+	var formatMethodsStruct []MethodDoc
 	for _, method := range methods {
 		lines := strings.Split(method, "\n")
-		var methodDocIter methodDoc
+		var methodDocIter MethodDoc
 		inDescription := false
 		for _, line := range lines {
-
 			if strings.Contains(line, "*/") {
 				inDescription = false
 			}
@@ -32,27 +31,28 @@ func formatMethods(methods []string) []methodDoc {
 			if strings.Contains(line, "/**") {
 				inDescription = true
 			}
-			if strings.Contains(line, "get") {
+			switch {
+			case strings.Contains(line, "get"):
 				methodDocIter.Type = "get"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
 				methodDocIter.ResponseDescription = "OK"
-			} else if strings.Contains(line, "post") {
+			case strings.Contains(line, "post"):
 				methodDocIter.Type = "post"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
 				methodDocIter.ResponseDescription = "OK"
-			} else if strings.Contains(line, "put") {
+			case strings.Contains(line, "put"):
 				methodDocIter.Type = "put"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
 				methodDocIter.ResponseDescription = "OK"
-			} else if strings.Contains(line, "delete") {
+			case strings.Contains(line, "delete"):
 				methodDocIter.Type = "delete"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
 				methodDocIter.ResponseDescription = "OK"
-			} else if strings.Contains(line, "patch") {
+			case strings.Contains(line, "patch"):
 				methodDocIter.Type = "patch"
 				methodDocIter.Route = _getName(line)
 				methodDocIter.Response = 200
