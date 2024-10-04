@@ -1,10 +1,11 @@
 package main
 
 import (
-	"genApiDocGo/src/fileslogic"
-	"genApiDocGo/src/internal"
 	"log"
 	"os"
+
+	"genApiDocGo/src/fileslogic"
+	"genApiDocGo/src/internal"
 
 	"github.com/common-nighthawk/go-figure"
 )
@@ -20,11 +21,12 @@ func main() {
 	} else {
 		targetDirectoryPath, _ = os.Getwd()
 	}
-	fileType := getUniqueSelect("Enter type of files to generate "+
-		"the documentation", internal.GetFileTypeOptions())
 
-	_ = getUniqueSelect("Enter the framework used",
-		internal.GetFrameworks(fileType))
+	fileType, _ := RunSelector(internal.GetFileTypeOptions(), SingleSelection,
+		"Enter type of files to generate the documentation:", internal.ViewHeigh)
+
+	_, _ = RunSelector(internal.GetFrameworks(fileType), SingleSelection,
+		"Enter the framework used:", internal.ViewHeigh)
 
 	files, directories, err := fileslogic.GetFiles(targetDirectoryPath,
 		fileType)
@@ -33,7 +35,8 @@ func main() {
 		log.Fatal("Error when extracting files", err)
 	}
 
-	excludeDirectories, err := getExcludedDirectories(0, directories)
+	_, excludeDirectories := RunSelector(directories, MultiSelection,
+		"Select the directories that want exclude:", internal.ViewHeigh)
 
 	if err != nil {
 		log.Fatal("Error obtaining exclude directories", err)

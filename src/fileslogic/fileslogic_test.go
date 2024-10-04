@@ -1,10 +1,54 @@
-package fileslogic_test
+package fileslogic
 
 import (
-	"genApiDocGo/src/fileslogic"
+	"io/fs"
 	"testing"
 )
 
+type MockWalkDir struct {
+	MockFunc func(root string, fn fs.WalkDirFunc) error
+}
+
+func (m *MockWalkDir) WalkDir(root string, fn fs.WalkDirFunc) error {
+	return m.MockFunc(root, fn)
+}
+
+func TestGetFiles(t *testing.T) {
+	tests := []struct {
+		name                string
+		targetDirectoryPath string
+		filesType           string
+		expectedFiles       []string
+		expectedDirectories []string
+		// expectedError error
+	}{
+		{
+			name:                "Find files with the extension",
+			targetDirectoryPath: "./mockDirectory",
+			filesType:           "js",
+			expectedFiles:       []string{"./mockDirectory/mockFile.js"},
+			expectedDirectories: []string{},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			filesResult, directoriesResult, _ := GetFiles(
+				test.targetDirectoryPath, test.filesType)
+			for i := range filesResult {
+				if filesResult[i] != test.expectedFiles[i] {
+					t.Errorf("at index %d: expected %v, got %v", i,
+						test.expectedFiles[i], filesResult[i])
+				}
+			}
+			for i := range directoriesResult {
+				if directoriesResult[i] != test.expectedDirectories[i] {
+					t.Errorf("at index %d: expected %v, got %v", i,
+						test.expectedDirectories[i], directoriesResult[i])
+				}
+			}
+		})
+	}
+}
 func TestExcludeFilesInBanDirectories(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -49,7 +93,7 @@ func TestExcludeFilesInBanDirectories(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := fileslogic.ExcludeFilesInBanDirectories(test.directories,
+			result := ExcludeFilesInBanDirectories(test.directories,
 				test.files)
 			if len(result) != len(test.expected) {
 				t.Errorf("expected %v, got %v", test.expected, result)

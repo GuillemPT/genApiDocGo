@@ -19,9 +19,9 @@ type Item struct {
 // GetFiles returns files ([]string) that its extension match with fileType
 // parameter, directories ([]*item) and error.
 func GetFiles(targetDirectoryPath string,
-	filesType string) ([]string, []*Item, error) {
+	filesType string) ([]string, []string, error) {
 	var files []string
-	var directories []*Item
+	var directories []string
 
 	err := filepath.WalkDir(targetDirectoryPath,
 		func(path string, file fs.DirEntry, err error) error {
@@ -30,14 +30,9 @@ func GetFiles(targetDirectoryPath string,
 			}
 
 			if file.IsDir() {
-				directory := Item{ID: file.Name()}
-				directories = append(directories, &directory)
-			}
-
-			if strings.Contains(file.Name(), ".") {
-				if strings.Split(file.Name(), ".")[1] == filesType {
-					files = append(files, path)
-				}
+				directories = append(directories, file.Name())
+			} else if filepath.Ext(file.Name()) == filesType {
+				files = append(files, path)
 			}
 
 			return nil
@@ -50,6 +45,9 @@ func GetFiles(targetDirectoryPath string,
 	return files, directories, nil
 }
 
+// Compare the current files and the excluded directories and if a file have not
+// a ban directory in the path, tmpFiles variable. This variable will contain
+// the files to extract the content.
 func ExcludeFilesInBanDirectories(directories []string,
 	files []string) []string {
 	var tmpFiles []string
@@ -63,8 +61,9 @@ func ExcludeFilesInBanDirectories(directories []string,
 		}
 		if !inBanDirectory {
 			tmpFiles = append(tmpFiles, file)
+		} else {
+			inBanDirectory = false
 		}
-		inBanDirectory = false
 	}
 
 	return tmpFiles

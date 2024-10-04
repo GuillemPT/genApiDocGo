@@ -12,6 +12,7 @@ type MethodDoc struct {
 	ResponseDescription string
 }
 
+// TODO: change all method, don't work well, do the test before please
 func FormatMethods(methods []string) []MethodDoc {
 	var formatMethodsStruct []MethodDoc
 	for _, method := range methods {

@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+// TODO: change a json, i think is easier to manage
 const baseDocument = "openapi: 3.0.3\n" +
 	"info:\n" +
 	"  title: Sample API\n" +
