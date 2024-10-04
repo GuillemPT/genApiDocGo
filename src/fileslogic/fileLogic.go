@@ -30,6 +30,9 @@ func GetFiles(targetDirectoryPath string,
 			}
 
 			if file.IsDir() {
+				if string(file.Name()[0]) == "." {
+					return filepath.SkipDir
+				}
 				directories = append(directories, file.Name())
 			} else if filepath.Ext(file.Name()) == filesType {
 				files = append(files, path)
