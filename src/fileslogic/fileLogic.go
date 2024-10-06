@@ -118,11 +118,11 @@ func processMethod(line string, braceCounter int, methodsToDoc *strings.Builder,
 		if braceCounter == -1 {
 			braceCounter = 0
 		}
-		braceCounter++
+		braceCounter += strings.Count(line, "{")
 	}
 
 	if strings.Contains(line, "}") {
-		braceCounter--
+		braceCounter -= strings.Count(line, "}")
 	}
 
 	if braceCounter == 0 {
