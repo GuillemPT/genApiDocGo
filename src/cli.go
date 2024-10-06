@@ -40,44 +40,54 @@ func (m SelectorModel) Init() tea.Cmd {
 }
 
 func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	//nolint: gocritic // the next directive must be in a switch.
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter": // Quit the program
 			return m, tea.Quit
-
 		case "up", "k": // Move cursor up
-			if m.cursor > 0 {
-				m.cursor--
-			}
-			if m.cursor < m.startIndex {
-				m.startIndex--
-			}
-
+			moveCursorUp(&m)
 		case "down", "j": // Move cursor down
-			if m.cursor < len(m.options)-1 {
-				m.cursor++
-			}
-			if m.cursor >= m.startIndex+m.viewHeight {
-				m.startIndex++
-			}
-
+			moveCursorDown(&m)
 		case " ": // Toggle selection
-			if m.selectionMode == SingleSelection {
-				// Clear previous selection in single selection mode
-				for k := range m.selected {
-					delete(m.selected, k)
-				}
-				m.selected[m.cursor] = true
-			} else if m.selectionMode == MultiSelection {
-				// Toggle in multi-selection mode
-				m.selected[m.cursor] = !m.selected[m.cursor]
-			}
+			toggleSelection(&m)
 		case "ctrl+c", "ctrl+q":
 			log.Panic("Cancel tool execute")
 		}
 	}
 	return m, nil
+}
+
+func moveCursorUp(m *SelectorModel) {
+	if m.cursor > 0 {
+		m.cursor--
+	}
+	if m.cursor < m.startIndex {
+		m.startIndex--
+	}
+}
+
+func moveCursorDown(m *SelectorModel) {
+	if m.cursor < len(m.options)-1 {
+		m.cursor++
+	}
+	if m.cursor >= m.startIndex+m.viewHeight {
+		m.startIndex++
+	}
+}
+
+func toggleSelection(m *SelectorModel) {
+	if m.selectionMode == SingleSelection {
+		// Clear previous selection in single selection mode
+		for k := range m.selected {
+			delete(m.selected, k)
+		}
+		m.selected[m.cursor] = true
+	} else if m.selectionMode == MultiSelection {
+		// Toggle in multi-selection mode
+		m.selected[m.cursor] = !m.selected[m.cursor]
+	}
 }
 
 // View renders the UI for the selector.
