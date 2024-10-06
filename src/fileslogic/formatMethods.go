@@ -4,20 +4,15 @@ import (
 	"strings"
 )
 
-type MethodDoc struct {
-	Route               string
-	Type                string
-	Description         string
-	Response            int
-	ResponseDescription string
-}
-
 // TODO: change all method, don't work well, do the test before please
-func FormatMethods(methods []string) []MethodDoc {
-	var formatMethodsStruct []MethodDoc
+func FormatMethods(methods []string) map[string]pathDocument {
+	pathDocMap := make(map[string]pathDocument)
 	for _, method := range methods {
 		lines := strings.Split(method, "\n")
-		var methodDocIter MethodDoc
+		pathDoc := make(map[string]operationDocument)
+		var optDoc operationDocument
+		optDoc.Responses = make(map[string]responsesDocument)
+		var responsesDoc responsesDocument
 		inDescription := false
 		for _, line := range lines {
 			if strings.Contains(line, "*/") {
@@ -27,43 +22,41 @@ func FormatMethods(methods []string) []MethodDoc {
 				description := line
 				description = strings.Trim(description, " ")
 				description = strings.Trim(description, "*")
-				methodDocIter.Description += description
+				optDoc.Description += description
 			}
 			if strings.Contains(line, "/**") {
 				inDescription = true
 			}
 			switch {
-			case strings.Contains(line, "get"):
-				methodDocIter.Type = "get"
-				methodDocIter.Route = _getName(line)
-				methodDocIter.Response = 200
-				methodDocIter.ResponseDescription = "OK"
-			case strings.Contains(line, "post"):
-				methodDocIter.Type = "post"
-				methodDocIter.Route = _getName(line)
-				methodDocIter.Response = 200
-				methodDocIter.ResponseDescription = "OK"
-			case strings.Contains(line, "put"):
-				methodDocIter.Type = "put"
-				methodDocIter.Route = _getName(line)
-				methodDocIter.Response = 200
-				methodDocIter.ResponseDescription = "OK"
-			case strings.Contains(line, "delete"):
-				methodDocIter.Type = "delete"
-				methodDocIter.Route = _getName(line)
-				methodDocIter.Response = 200
-				methodDocIter.ResponseDescription = "OK"
-			case strings.Contains(line, "patch"):
-				methodDocIter.Type = "patch"
-				methodDocIter.Route = _getName(line)
-				methodDocIter.Response = 200
-				methodDocIter.ResponseDescription = "OK"
+			case strings.Contains(line, ".get"):
+				responsesDoc.Description = "Ok"
+				optDoc.Responses["200"] = responsesDoc
+				pathDoc["get"] = optDoc
+				pathDocMap[_getName(line)] = pathDoc
+			case strings.Contains(line, ".post"):
+				responsesDoc.Description = "Ok"
+				optDoc.Responses["200"] = responsesDoc
+				pathDoc["post"] = optDoc
+				pathDocMap[_getName(line)] = pathDoc
+			case strings.Contains(line, ".put"):
+				responsesDoc.Description = "Ok"
+				optDoc.Responses["200"] = responsesDoc
+				pathDoc["put"] = optDoc
+				pathDocMap[_getName(line)] = pathDoc
+			case strings.Contains(line, ".delete"):
+				responsesDoc.Description = "Ok"
+				optDoc.Responses["200"] = responsesDoc
+				pathDoc["delete"] = optDoc
+				pathDocMap[_getName(line)] = pathDoc
+			case strings.Contains(line, ".patch"):
+				responsesDoc.Description = "Ok"
+				optDoc.Responses["200"] = responsesDoc
+				pathDoc["patch"] = optDoc
+				pathDocMap[_getName(line)] = pathDoc
 			}
 		}
-
-		formatMethodsStruct = append(formatMethodsStruct, methodDocIter)
 	}
-	return formatMethodsStruct
+	return pathDocMap
 }
 
 func _getName(line string) string {

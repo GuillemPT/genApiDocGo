@@ -1,44 +1,60 @@
 package fileslogic
 
 import (
-	"fmt"
+	"encoding/json"
 	"io"
 	"log"
 	"os"
 )
 
-// TODO: change a json, i think is easier to manage
-const baseDocument = "openapi: 3.0.3\n" +
-	"info:\n" +
-	"  title: Sample API\n" +
-	"  description: API description.\n" +
-	"  version: 1.0.0\n" +
-	"paths:\n"
+type swaggerDocument struct {
+	Openapi string                  `json:"openapi"`
+	Info    infoDocument            `json:"info"`
+	Paths   map[string]pathDocument `json:"paths"` // key is the route (/home)
+}
 
-func WriteDocument(structuredMethods []MethodDoc, path string) {
-	swagger, err := os.Create(path + "/swagger.yaml")
+type infoDocument struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Version     string `json:"version"`
+}
+
+// key is the type of operation (get)
+type pathDocument map[string]operationDocument
+
+type operationDocument struct {
+	Description string `json:"description"`
+	// key is the code id of response (200)
+	Responses map[string]responsesDocument `json:"responses"`
+}
+
+type responsesDocument struct {
+	Description string `json:"description"`
+}
+
+// TODO: change a json, i think is easier to manage
+var baseDocument = swaggerDocument{Openapi: "3.0.3",
+	Info: infoDocument{Title: "API name", Description: "API description",
+		Version: "1.0.0"}}
+
+func WriteDocument(structuredMethods map[string]pathDocument, path string) {
+	swagger, err := os.Create(path + "/swagger.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer swagger.Close()
-	_, err = io.WriteString(swagger, baseDocument)
+	baseDocument.Paths = structuredMethods
+	jsonData, err := json.MarshalIndent(baseDocument, "", " ")
+
+	if err != nil {
+		log.Panic("Error marshalling to JSON:", err)
+		return
+	}
+
+	_, err = io.Writer.Write(swagger, jsonData)
 
 	if err != nil {
 		log.Panic("Error when write swagger: ", err)
-	}
-
-	for _, structuredMethod := range structuredMethods {
-		structToString := fmt.Sprintf(
-			" %s:\n  %s:\n    description: %s\n    responses:\n     "+
-				"%d:\n      description: %s\n",
-			structuredMethod.Route, structuredMethod.Type,
-			structuredMethod.Description, structuredMethod.Response,
-			structuredMethod.ResponseDescription)
-		_, err = io.WriteString(swagger, structToString)
-
-		if err != nil {
-			log.Panic("Error when write swagger: ", err)
-		}
 	}
 }
