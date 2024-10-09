@@ -1,8 +1,11 @@
 package fileslogic
 
 import (
+	"regexp"
 	"strings"
 )
+
+const regexMinLength = 4
 
 func FormatMethods(methods []string) map[string]pathDocument {
 	pathDocMap := make(map[string]pathDocument)
@@ -21,6 +24,10 @@ func formatMethod(method string) (string, pathDocument) {
 	optDoc.Responses = make(map[string]responsesDocument)
 	var responsesDoc responsesDocument
 	inDescription := false
+	// Regular expression to match HTTP method calls and extract path name
+	regex := regexp.MustCompile(
+		`\w+\.(get|post|put|delete)\((["'])([^"']+)(["'])`)
+
 	for _, line := range lines {
 		line = strings.Trim(line, " ")
 		if strings.Contains(line, "/*") {
@@ -35,44 +42,20 @@ func formatMethod(method string) (string, pathDocument) {
 		if strings.Contains(line, "*/") {
 			inDescription = false
 		}
+
 		if !inDescription {
-			switch {
-			case strings.Contains(line, ".get("):
-				pathName = _getName(line)
+			match := regex.FindStringSubmatch(line)
+			if len(match) >= regexMinLength {
+				// route name
+				pathName = match[3]
 				responsesDoc.Description = "Ok"
 				optDoc.Responses["200"] = responsesDoc
-				pathDoc["get"] = optDoc
-			case strings.Contains(line, ".post("):
-				pathName = _getName(line)
-				responsesDoc.Description = "Ok"
-				optDoc.Responses["200"] = responsesDoc
-				pathDoc["post"] = optDoc
-			case strings.Contains(line, ".put("):
-				pathName = _getName(line)
-				responsesDoc.Description = "Ok"
-				optDoc.Responses["200"] = responsesDoc
-				pathDoc["put"] = optDoc
-			case strings.Contains(line, ".delete("):
-				pathName = _getName(line)
-				responsesDoc.Description = "Ok"
-				optDoc.Responses["200"] = responsesDoc
-				pathDoc["delete"] = optDoc
+				// method name
+				pathDoc[match[1]] = optDoc
 			}
 		}
 	}
 	return pathName, pathDoc
-}
-
-func _getName(line string) string {
-	start := strings.Index(line, "(")
-	end := strings.Index(line, ")")
-
-	partialLine := line[start+1 : end]
-	parts := strings.Split(partialLine, ",")
-
-	route := strings.TrimSpace(parts[0])
-	route = strings.Trim(route, "'")
-	return route
 }
 
 func addElementInPathDoc(pathMap map[string]pathDocument, key string,
