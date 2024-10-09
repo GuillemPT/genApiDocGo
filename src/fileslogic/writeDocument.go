@@ -11,7 +11,7 @@ type swaggerDocument struct {
 	Openapi string       `json:"openapi"`
 	Info    infoDocument `json:"info"`
 	// The same path can have different operations.
-	Paths map[string]pathDocument `json:"paths"` // key is the route (/home)
+	Paths map[string]PathDocument `json:"paths"` // key is the route (/home)
 }
 
 type infoDocument struct {
@@ -21,7 +21,7 @@ type infoDocument struct {
 }
 
 // key is the type of operation (get).
-type pathDocument map[string]operationDocument
+type PathDocument map[string]operationDocument
 
 type operationDocument struct {
 	Description string `json:"description"`
@@ -33,7 +33,7 @@ type responsesDocument struct {
 	Description string `json:"description"`
 }
 
-func WriteDocument(structuredMethods map[string]pathDocument, path string) {
+func WriteDocument(structuredMethods map[string]PathDocument, path string) {
 	baseDocument := swaggerDocument{Openapi: "3.0.3",
 		Info: infoDocument{Title: "API name", Description: "API description",
 			Version: "1.0.0"}}

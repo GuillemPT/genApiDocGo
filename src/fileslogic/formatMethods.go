@@ -15,8 +15,8 @@ var regex = regexp.MustCompile(
 
 var statusRegex = regexp.MustCompile(`res\.status\((\d{3})\)`)
 
-func FormatMethods(methods []string) map[string]pathDocument {
-	pathDocMap := make(map[string]pathDocument, len(methods))
+func FormatMethods(methods []string) map[string]PathDocument {
+	pathDocMap := make(map[string]PathDocument, len(methods))
 	for _, method := range methods {
 		result := formatMethod(method)
 		addElementInPathDoc(
@@ -30,7 +30,7 @@ func FormatMethods(methods []string) map[string]pathDocument {
 
 type formatResult struct {
 	pathName      string
-	pathDoc       pathDocument
+	pathDoc       PathDocument
 	operationName string
 }
 
@@ -80,8 +80,8 @@ func formatMethod(method string) formatResult {
 	return result
 }
 
-func addElementInPathDoc(pathMap map[string]pathDocument,
-	key string, pathDoc pathDocument, operationName string) {
+func addElementInPathDoc(pathMap map[string]PathDocument,
+	key string, pathDoc PathDocument, operationName string) {
 	if currentPath, exists := pathMap[key]; exists {
 		currentPath[operationName] = pathDoc[operationName]
 	} else {
