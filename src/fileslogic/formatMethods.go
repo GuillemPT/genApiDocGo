@@ -1,20 +1,20 @@
 package fileslogic
 
 import (
+	"genApiDocGo/src/internal"
 	"regexp"
 	"strings"
 )
 
-const (
-	regexHeaderLength     = 4
-	regexStatusCodeLength = 2
-)
-
+// regex to extract the route name and the type of http call.
 var regex = regexp.MustCompile(
 	`\w+\.(get|post|put|delete)\((["'])([^"']+)(["'])`)
 
+// regex to extract the request status.
 var statusRegex = regexp.MustCompile(`res\.status\((\d{3})\)`)
 
+// Process all the methods passed by argument and returns a map of type
+// key: route type, value: PathDocument.
 func FormatMethods(methods []string) map[string]PathDocument {
 	pathDocMap := make(map[string]PathDocument, len(methods))
 	for _, method := range methods {
@@ -28,12 +28,14 @@ func FormatMethods(methods []string) map[string]PathDocument {
 	return pathDocMap
 }
 
+// Return one type instead of three elements.
 type formatResult struct {
 	pathName      string
 	pathDoc       PathDocument
 	operationName string
 }
 
+// Process each method individually and formats it.
 func formatMethod(method string) formatResult {
 	var result formatResult
 	lines := strings.Split(method, "\n")
@@ -54,14 +56,14 @@ func formatMethod(method string) formatResult {
 		}
 		if !inDescription {
 			match := regex.FindStringSubmatch(line)
-			if len(match) >= regexHeaderLength {
+			if len(match) >= internal.RegexHeaderLength {
 				result.pathName = match[3]
 				result.operationName = match[1]
 				pathDoc[result.operationName] = optDoc
 			}
 
 			statusMatch := statusRegex.FindStringSubmatch(line)
-			if len(statusMatch) == regexStatusCodeLength {
+			if len(statusMatch) == internal.RegexStatusCodeLength {
 				statusCode := statusMatch[1]
 				optDoc.Responses[statusCode] = responsesDocument{
 					Description: "Response status: " + statusCode,
@@ -80,6 +82,8 @@ func formatMethod(method string) formatResult {
 	return result
 }
 
+// Handle if exist a value in the map for the current key,
+// and adds the new value.
 func addElementInPathDoc(pathMap map[string]PathDocument,
 	key string, pathDoc PathDocument, operationName string) {
 	if currentPath, exists := pathMap[key]; exists {

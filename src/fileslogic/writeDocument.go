@@ -33,6 +33,7 @@ type responsesDocument struct {
 	Description string `json:"description"`
 }
 
+// Take the formatted methods and write the swagger.json file.
 func WriteDocument(structuredMethods map[string]PathDocument, path string) {
 	baseDocument := swaggerDocument{Openapi: "3.0.3",
 		Info: infoDocument{Title: "API name", Description: "API description",

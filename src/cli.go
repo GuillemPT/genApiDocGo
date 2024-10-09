@@ -25,6 +25,7 @@ type SelectorModel struct {
 	viewHeight         int
 }
 
+// Create a new selector.
 func NewSelectorModel(options []string, mode SelectionMode,
 	selectionStatement string, viewHeight int) SelectorModel {
 	return SelectorModel{
@@ -35,10 +36,12 @@ func NewSelectorModel(options []string, mode SelectionMode,
 		viewHeight:         viewHeight,
 	}
 }
+
 func (m SelectorModel) Init() tea.Cmd {
 	return nil
 }
 
+// Update the view.
 func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	//nolint: gocritic // the next directive must be in a switch.
 	switch msg := msg.(type) {
@@ -59,6 +62,7 @@ func (m SelectorModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// Move cursor up, and update the view.
 func moveCursorUp(m *SelectorModel) {
 	if m.cursor > 0 {
 		m.cursor--
@@ -68,6 +72,7 @@ func moveCursorUp(m *SelectorModel) {
 	}
 }
 
+// Move cursor down, and update the view.
 func moveCursorDown(m *SelectorModel) {
 	if m.cursor < len(m.options)-1 {
 		m.cursor++
@@ -77,6 +82,7 @@ func moveCursorDown(m *SelectorModel) {
 	}
 }
 
+// Toggle selection.
 func toggleSelection(m *SelectorModel) {
 	if m.selectionMode == SingleSelection {
 		// Clear previous selection in single selection mode
@@ -136,7 +142,9 @@ func (m SelectorModel) FinalView() (string, []string) {
 	return "", selected
 }
 
-// RunSelector starts the selector model with Bubble Tea.
+// RunSelector starts the selector model with Bubble Tea, return two parameters
+// depend of the type of selector, if is single selector return value , nil
+// if is a multi selector return "", values.
 func RunSelector(options []string, mode SelectionMode,
 	selectionStatement string, viewHeigh int) (string, []string) {
 	p := tea.NewProgram(NewSelectorModel(options, mode, selectionStatement,

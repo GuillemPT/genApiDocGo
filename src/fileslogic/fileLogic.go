@@ -2,6 +2,7 @@ package fileslogic
 
 import (
 	"bufio"
+	"genApiDocGo/src/internal"
 	"io/fs"
 	"log"
 	"os"
@@ -63,7 +64,7 @@ func ExcludeFilesInBanDirectories(directories []string,
 	return tmpFiles
 }
 
-// return array with each method to create documentation.
+// Return array with each method to create documentation.
 func GetContent(files []string) []string {
 	var extractedFunctions []string
 
@@ -81,6 +82,7 @@ func GetContent(files []string) []string {
 	return extractedFunctions
 }
 
+// get a file and extract all methods mark with the tag.
 func processFile(scanner *bufio.Scanner, extractedFunctions *[]string) {
 	var inMethod bool
 	var braceCounter int
@@ -92,7 +94,7 @@ func processFile(scanner *bufio.Scanner, extractedFunctions *[]string) {
 		if inMethod {
 			inMethod, braceCounter = processMethod(line, braceCounter,
 				&methodsToDoc, extractedFunctions)
-		} else if strings.Contains(line, "@api_generate_doc") {
+		} else if strings.Contains(line, internal.Tag) {
 			inMethod = true
 			braceCounter = 0
 		}
