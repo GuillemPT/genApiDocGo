@@ -7,77 +7,68 @@ import (
 
 const regexMinLength = 4
 
+var regex = regexp.MustCompile(
+	`\w+\.(get|post|put|delete)\((["'])([^"']+)(["'])`)
+
 func FormatMethods(methods []string) map[string]pathDocument {
-	pathDocMap := make(map[string]pathDocument)
+	pathDocMap := make(map[string]pathDocument, len(methods))
 	for _, method := range methods {
-		pathName, pathDoc := formatMethod(method)
-		addElementInPathDoc(pathDocMap, pathName, pathDoc)
+		result := formatMethod(method)
+		addElementInPathDoc(
+			pathDocMap,
+			result.pathName,
+			result.pathDoc,
+			result.operationName)
 	}
 	return pathDocMap
 }
 
-func formatMethod(method string) (string, pathDocument) {
-	var pathName string
+type formatResult struct {
+	pathName      string
+	pathDoc       pathDocument
+	operationName string
+}
+
+func formatMethod(method string) formatResult {
+	var result formatResult
 	lines := strings.Split(method, "\n")
 	pathDoc := make(map[string]operationDocument)
-	var optDoc operationDocument
-	optDoc.Responses = make(map[string]responsesDocument)
-	var responsesDoc responsesDocument
+	optDoc := operationDocument{
+		Responses: map[string]responsesDocument{
+			"200": {Description: "Ok"},
+		},
+	}
 	inDescription := false
-	// Regular expression to match HTTP method calls and extract path name
-	regex := regexp.MustCompile(
-		`\w+\.(get|post|put|delete)\((["'])([^"']+)(["'])`)
 
 	for _, line := range lines {
-		line = strings.Trim(line, " ")
+		line = strings.TrimSpace(line)
 		if strings.Contains(line, "/*") {
 			inDescription = true
 		}
 		if inDescription {
-			description := line
-			description = strings.Trim(description, "/")
-			description = strings.Trim(description, "*")
-			optDoc.Description += description
+			optDoc.Description += strings.Trim(line, "/*")
 		}
 		if strings.Contains(line, "*/") {
 			inDescription = false
 		}
-
 		if !inDescription {
 			match := regex.FindStringSubmatch(line)
 			if len(match) >= regexMinLength {
-				// route name
-				pathName = match[3]
-				responsesDoc.Description = "Ok"
-				optDoc.Responses["200"] = responsesDoc
-				// method name
-				pathDoc[match[1]] = optDoc
+				result.pathName = match[3]
+				result.operationName = match[1]
+				pathDoc[result.operationName] = optDoc
 			}
 		}
 	}
-	return pathName, pathDoc
+	result.pathDoc = pathDoc
+	return result
 }
 
-func addElementInPathDoc(pathMap map[string]pathDocument, key string,
-	pathDoc pathDocument) {
-	if pathMap[key] != nil {
-		pathCurrent := pathMap[key]
-		newKey, newValue := getOperation(pathDoc)
-		pathCurrent[newKey] = newValue
-		pathMap[key] = pathCurrent
+func addElementInPathDoc(pathMap map[string]pathDocument,
+	key string, pathDoc pathDocument, operationName string) {
+	if currentPath, exists := pathMap[key]; exists {
+		currentPath[operationName] = pathDoc[operationName]
 	} else {
 		pathMap[key] = pathDoc
 	}
-}
-
-func getOperation(pathDoc pathDocument) (string, operationDocument) {
-	var found bool
-	var pathDocValue operationDocument
-	pathDocKey := -1
-	operations := []string{"get", "post", "delete", "update", "put"}
-	for !found {
-		pathDocKey++
-		pathDocValue, found = pathDoc[operations[pathDocKey]]
-	}
-	return operations[pathDocKey], pathDocValue
 }
