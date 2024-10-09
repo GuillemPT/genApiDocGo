@@ -54,9 +54,9 @@ func GetFiles(targetDirectoryPath string,
 func ExcludeFilesInBanDirectories(directories []string,
 	files []string) []string {
 	var tmpFiles []string
-	var inBanDirectory bool
 
 	for _, file := range files {
+		inBanDirectory := false
 		for _, directory := range directories {
 			if strings.Contains(file, directory) {
 				inBanDirectory = true
@@ -64,8 +64,6 @@ func ExcludeFilesInBanDirectories(directories []string,
 		}
 		if !inBanDirectory {
 			tmpFiles = append(tmpFiles, file)
-		} else {
-			inBanDirectory = false
 		}
 	}
 
@@ -91,8 +89,8 @@ func GetContent(files []string) []string {
 }
 
 func processFile(scanner *bufio.Scanner, extractedFunctions *[]string) {
-	inMethod := false
-	braceCounter := -1
+	var inMethod bool
+	var braceCounter int
 	var methodsToDoc strings.Builder
 
 	for scanner.Scan() {
@@ -101,9 +99,9 @@ func processFile(scanner *bufio.Scanner, extractedFunctions *[]string) {
 		if inMethod {
 			inMethod, braceCounter = processMethod(line, braceCounter,
 				&methodsToDoc, extractedFunctions)
-		}
-		if strings.Contains(line, "@api_generate_doc") {
+		} else if strings.Contains(line, "@api_generate_doc") {
 			inMethod = true
+			braceCounter = 0
 		}
 	}
 }
@@ -114,22 +112,14 @@ func processMethod(line string, braceCounter int, methodsToDoc *strings.Builder,
 	extractedFunctions *[]string) (bool, int) {
 	methodsToDoc.WriteString(line + "\n")
 
-	if strings.Contains(line, "{") {
-		if braceCounter == -1 {
-			braceCounter = 0
-		}
-		braceCounter += strings.Count(line, "{")
-	}
-
-	if strings.Contains(line, "}") {
-		braceCounter -= strings.Count(line, "}")
-	}
-
-	if braceCounter == 0 {
+	openBraces := strings.Count(line, "{")
+	closesBraces := strings.Count(line, "}")
+	braceCounter += openBraces - closesBraces
+	if braceCounter == 0 && closesBraces > 0 {
 		*extractedFunctions = append(*extractedFunctions,
 			methodsToDoc.String())
 		methodsToDoc.Reset()
-		return false, -1
+		return false, 0
 	}
 	return true, braceCounter
 }
