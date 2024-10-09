@@ -9,15 +9,8 @@ import (
 	"strings"
 )
 
-// Item struct serves to make a multi selector in getExcludedDirectories
-// (genApiDocGo/src/cli.go).
-type Item struct {
-	ID         string
-	IsSelected bool
-}
-
 // GetFiles returns files ([]string) that its extension match with fileType
-// parameter, directories ([]*item) and error.
+// parameter, directories ([]string) and error.
 func GetFiles(targetDirectoryPath string,
 	filesType string) ([]string, []string, error) {
 	var files []string
