@@ -53,6 +53,7 @@ func formatMethod(method string) formatResult {
 		}
 		if strings.Contains(line, "*/") {
 			inDescription = false
+			optDoc.Description = strings.Trim(optDoc.Description, " ")
 		}
 		if !inDescription {
 			match := regex.FindStringSubmatch(line)
