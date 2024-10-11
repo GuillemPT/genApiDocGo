@@ -13,6 +13,10 @@ const (
 	RegexHeaderLength = 4
 	// The exactly length for regex to identify the response number.
 	RegexStatusCodeLength = 2
+	// Default value for fileType.
+	DefaultFileType = ".js"
+	// Default value for Frameworks, first position of the array.
+	DefaultFramework = 0
 )
 
 // Get file type options.

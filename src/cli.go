@@ -137,6 +137,9 @@ func (m SelectorModel) FinalView() (string, []string) {
 		}
 	}
 	if m.selectionMode == SingleSelection {
+		if len(selected) == 0 {
+			return "", nil
+		}
 		return selected[0], nil
 	}
 	return "", selected

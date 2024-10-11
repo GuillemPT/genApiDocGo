@@ -27,12 +27,26 @@ func main() {
 
 	// Selector to chose the file type to search.
 	fileType, _ := RunSelector(internal.GetFileTypeOptions(), SingleSelection,
-		"Enter type of files to generate the documentation:", internal.ViewHeigh)
+		"Enter type of files to generate the documentation "+
+			"(by default .js):", internal.ViewHeigh)
+
+	if fileType == "" {
+		fileType = internal.DefaultFileType
+	}
+
+	log.Println("File type set: ", fileType)
 
 	// Selector to chose the framework (currently only active express).
-	_, _ = RunSelector(internal.GetFrameworks(fileType), SingleSelection,
-		"Enter the framework used:", internal.ViewHeigh)
+	frameworks := internal.GetFrameworks(fileType)
+	framework, _ := RunSelector(frameworks, SingleSelection,
+		"Enter the framework used (by default the first element of the list):",
+		internal.ViewHeigh)
 
+	if framework == "" {
+		framework = frameworks[internal.DefaultFramework]
+	}
+
+	log.Println("Framework set: ", framework)
 	files, directories, err := fileslogic.GetFiles(targetDirectoryPath,
 		fileType)
 
