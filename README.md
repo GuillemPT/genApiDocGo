@@ -12,12 +12,12 @@ We plan to add more languages and frameworks in the future.
 
 ## Installation
 
-> [!WARNING]
-> I haven't tried this yet 
+> [!NOTE]
+> You must have Go version 1.22 installed.  
 
-To install **genApiDocGo**, make sure you have Go installed, then run:
+At the moment to use it, you have to download and run it. 
 ```sh
-go get github.com/GuillemPT/genApiDocGo
+go run ./src/ <path_project_to_doc> 
 ```
 
 ## Example
@@ -25,6 +25,11 @@ go get github.com/GuillemPT/genApiDocGo
 Given a route: 
 ```js
 // @api_generate_doc
+/* Description */
+or 
+/**
+ * Description
+ */
 router.post('/', async (req, res) => {
   // Endpoint code here
 });
