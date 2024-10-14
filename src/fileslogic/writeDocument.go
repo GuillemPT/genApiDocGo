@@ -2,42 +2,16 @@ package fileslogic
 
 import (
 	"encoding/json"
+	"genApiDocGo/src/internal"
 	"io"
 	"log"
 	"os"
 )
 
-type swaggerDocument struct {
-	Openapi string       `json:"openapi"`
-	Info    infoDocument `json:"info"`
-	// The same path can have different operations.
-	Paths map[string]PathDocument `json:"paths"` // key is the route (/home)
-}
-
-type infoDocument struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Version     string `json:"version"`
-}
-
-// key is the type of operation (get).
-type PathDocument map[string]operationDocument
-
-type operationDocument struct {
-	Description string `json:"description"`
-	// key is the code id of response (200).
-	Responses map[string]responsesDocument `json:"responses"`
-}
-
-type responsesDocument struct {
-	Description string `json:"description"`
-}
-
 // Take the formatted methods and write the swagger.json file.
-func WriteDocument(structuredMethods map[string]PathDocument, path string) {
-	baseDocument := swaggerDocument{Openapi: "3.0.3",
-		Info: infoDocument{Title: "API name", Description: "API description",
-			Version: "1.0.0"}}
+func WriteDocument(structuredMethods map[string]internal.PathDocument,
+	path string) {
+	baseDocument := internal.GetBaseDocumentConfig()
 	swagger, err := os.Create(path + "/swagger.json")
 	if err != nil {
 		log.Fatal(err)

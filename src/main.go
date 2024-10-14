@@ -10,20 +10,31 @@ import (
 	"github.com/common-nighthawk/go-figure"
 )
 
+const (
+	OneArgument int = iota + 1
+	TwoArguments
+)
+
 func main() {
 	// Draw the name and log the version
 	figure.NewFigure(internal.AppName, internal.LettersType, true).Print()
 	log.Print("Start "+internal.AppName+" with version: ", internal.Version)
 
 	var targetDirectoryPath string
+	var configPath string
 
-	if len(os.Args) > 1 {
-		// Set the path target.
-		targetDirectoryPath = os.Args[1]
-	} else {
+	switch len(os.Args) {
+	case OneArgument:
 		// Use this path as the default.
 		targetDirectoryPath, _ = os.Getwd()
+	case TwoArguments:
+		targetDirectoryPath = os.Args[1]
+	default:
+		targetDirectoryPath = os.Args[1]
+		configPath = os.Args[2]
 	}
+
+	internal.SetConfiguration(configPath)
 
 	// Selector to chose the file type to search.
 	fileType, _ := RunSelector(internal.GetFileTypeOptions(), SingleSelection,
