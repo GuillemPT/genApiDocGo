@@ -7,9 +7,18 @@ import (
 	"strings"
 )
 
-// regex to extract the route name and the type of http call.
+// regex to extract the route name and the type of http call (includes patch).
 var regex = regexp.MustCompile(
-	`\w+\.(get|post|put|delete)\((["'])([^"']+)(["'])`)
+	`\w+\.(get|post|put|delete|patch)\((["'])([^"']+)(["'])`)
+
+// regex to extract path parameters from a route string (e.g. :id, :userId).
+var pathParamRegex = regexp.MustCompile(`:(\w+)`)
+
+// regex to extract @summary annotation from doc comments.
+var summaryAnnotationRegex = regexp.MustCompile(`@summary\s+([^@]+)`)
+
+// regex to extract @tags annotation from doc comments.
+var tagsAnnotationRegex = regexp.MustCompile(`@tags\s+([^@]+)`)
 
 var responsesConfig map[string]string //nolint: gochecknoglobals // i need
 // regex to extract the request status.
@@ -40,7 +49,7 @@ type formatResult struct {
 // Process each method individually and formats it.
 func formatMethod(method string) formatResult {
 	responsesConfig = internal.GetResponsesConfig()
-	statusRegex = regexp.MustCompile(fmt.Sprintf(`res\.status\((.{%s})\)`,
+	statusRegex = regexp.MustCompile(fmt.Sprintf(`res\.status\((%s)\)`,
 		strings.Join(getKeys(responsesConfig), "|")))
 	var result formatResult
 	lines := strings.Split(method, "\n")
@@ -55,6 +64,16 @@ func formatMethod(method string) formatResult {
 			inDescription = true
 		}
 		if inDescription {
+			if match := summaryAnnotationRegex.FindStringSubmatch(line); len(match) >= 2 {
+				optDoc.Summary = strings.TrimSpace(match[1])
+			}
+			if match := tagsAnnotationRegex.FindStringSubmatch(line); len(match) >= 2 {
+				tags := strings.Split(strings.TrimSpace(match[1]), ",")
+				for i := range tags {
+					tags[i] = strings.TrimSpace(tags[i])
+				}
+				optDoc.Tags = tags
+			}
 			optDoc.Description += strings.Trim(line, "/*")
 		}
 		if strings.Contains(line, "*/") {
@@ -66,6 +85,7 @@ func formatMethod(method string) formatResult {
 			if len(match) >= internal.RegexHeaderLength {
 				result.pathName = match[3]
 				result.operationName = match[1]
+				optDoc.Parameters = extractPathParameters(result.pathName)
 				pathDoc[result.operationName] = optDoc
 			}
 
@@ -88,6 +108,25 @@ func formatMethod(method string) formatResult {
 	pathDoc[result.operationName] = optDoc
 	result.pathDoc = pathDoc
 	return result
+}
+
+// extractPathParameters parses a route path and returns a ParameterDocument
+// for each Express path parameter (e.g. :id → {name:"id", in:"path", required:true}).
+func extractPathParameters(path string) []internal.ParameterDocument {
+	matches := pathParamRegex.FindAllStringSubmatch(path, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+	params := make([]internal.ParameterDocument, 0, len(matches))
+	for _, m := range matches {
+		params = append(params, internal.ParameterDocument{
+			Name:     m[1],
+			In:       "path",
+			Required: true,
+			Schema:   internal.SchemaDocument{Type: "string"},
+		})
+	}
+	return params
 }
 
 // Handle if exist a value in the map for the current key,
