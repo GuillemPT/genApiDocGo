@@ -17,10 +17,10 @@ app.get('/', (req, res) => {
 
 // @api_generate_doc
 /**
- * About route
+ * Fun facts and quirks
  */
 app.get('/about', (req, res) => {
-    res.send('This is the About Page!');
+    res.send('🎉 I turn coffee into code and bugs into features! Still learning to center divs though... 🤷');
 });
 
 // @api_generate_doc
@@ -30,6 +30,21 @@ app.get('/about', (req, res) => {
  */
 app.get('/contact', (req, res) => {
     res.send('This is the Contact Page!');
+});
+
+// @api_generate_doc
+/**
+ * Professional background and experience
+ */
+app.get('/cv', (req, res) => {
+    const cv = {
+        name: 'API Developer',
+        experience: '5+ years in backend development',
+        skills: ['Node.js', 'Express', 'API Design', 'Documentation'],
+        education: 'Computer Science',
+        languages: ['JavaScript', 'TypeScript', 'Python']
+    };
+    res.json(cv);
 });
 
 /**
