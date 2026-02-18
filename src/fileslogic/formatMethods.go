@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"genApiDocGo/src/internal"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -46,11 +47,32 @@ type formatResult struct {
 	operationName string
 }
 
+// normalizePathParams converts Express-style path parameters (e.g. :id) to
+// OpenAPI-compliant template syntax (e.g. {id}).
+func normalizePathParams(path string) string {
+	return pathParamRegex.ReplaceAllString(path, `{$1}`)
+}
+
+// buildStatusRegex builds the status-code matching regexp from the provided
+// map in a deterministic order, quoting each key so custom configs with
+// special characters cannot break the regexp.
+func buildStatusRegex(m map[string]string) *regexp.Regexp {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for i, k := range keys {
+		keys[i] = regexp.QuoteMeta(k)
+	}
+	return regexp.MustCompile(fmt.Sprintf(`res\.status\((%s)\)`,
+		strings.Join(keys, "|")))
+}
+
 // Process each method individually and formats it.
 func formatMethod(method string) formatResult {
 	responsesConfig = internal.GetResponsesConfig()
-	statusRegex = regexp.MustCompile(fmt.Sprintf(`res\.status\((%s)\)`,
-		strings.Join(getKeys(responsesConfig), "|")))
+	statusRegex = buildStatusRegex(responsesConfig)
 	var result formatResult
 	lines := strings.Split(method, "\n")
 	pathDoc := make(map[string]internal.OperationDocument)
@@ -64,8 +86,10 @@ func formatMethod(method string) formatResult {
 			inDescription = true
 		}
 		if inDescription {
+			isAnnotation := false
 			if match := summaryAnnotationRegex.FindStringSubmatch(line); len(match) >= 2 {
 				optDoc.Summary = strings.TrimSpace(match[1])
+				isAnnotation = true
 			}
 			if match := tagsAnnotationRegex.FindStringSubmatch(line); len(match) >= 2 {
 				tags := strings.Split(strings.TrimSpace(match[1]), ",")
@@ -73,8 +97,11 @@ func formatMethod(method string) formatResult {
 					tags[i] = strings.TrimSpace(tags[i])
 				}
 				optDoc.Tags = tags
+				isAnnotation = true
 			}
-			optDoc.Description += strings.Trim(line, "/*")
+			if !isAnnotation {
+				optDoc.Description += strings.Trim(line, "/*")
+			}
 		}
 		if strings.Contains(line, "*/") {
 			inDescription = false
@@ -83,9 +110,10 @@ func formatMethod(method string) formatResult {
 		if !inDescription {
 			match := regex.FindStringSubmatch(line)
 			if len(match) >= internal.RegexHeaderLength {
-				result.pathName = match[3]
+				expressPath := match[3]
+				result.pathName = normalizePathParams(expressPath)
 				result.operationName = match[1]
-				optDoc.Parameters = extractPathParameters(result.pathName)
+				optDoc.Parameters = extractPathParameters(expressPath)
 				pathDoc[result.operationName] = optDoc
 			}
 
@@ -138,14 +166,4 @@ func addElementInPathDoc(pathMap map[string]internal.PathDocument,
 	} else {
 		pathMap[key] = pathDoc
 	}
-}
-
-// Function to get keys of the map, may be in the future can go to some internal
-// file, but for now it is only used here.
-func getKeys(m map[string]string) []string {
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-	return keys
 }

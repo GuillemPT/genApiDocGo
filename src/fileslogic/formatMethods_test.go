@@ -2,6 +2,7 @@ package fileslogic
 
 import (
 	"genApiDocGo/src/internal"
+	"strings"
 	"testing"
 )
 
@@ -43,9 +44,9 @@ router.patch('/users/:id', async (req, res) => {
 	}
 	result := FormatMethods(methods)
 
-	path, ok := result["/users/:id"]
+	path, ok := result["/users/{id}"]
 	if !ok {
-		t.Fatal("expected path /users/:id in result")
+		t.Fatal("expected path /users/{id} in result")
 	}
 	if _, ok := path["patch"]; !ok {
 		t.Error("expected 'patch' operation")
@@ -61,7 +62,7 @@ router.get('/users/:id', async (req, res) => {
 	}
 	result := FormatMethods(methods)
 
-	op := result["/users/:id"]["get"]
+	op := result["/users/{id}"]["get"]
 	if len(op.Parameters) != 1 {
 		t.Fatalf("expected 1 path parameter, got %d", len(op.Parameters))
 	}
@@ -89,7 +90,7 @@ router.get('/stores/:storeId/items/:itemId', async (req, res) => {
 	}
 	result := FormatMethods(methods)
 
-	op := result["/stores/:storeId/items/:itemId"]["get"]
+	op := result["/stores/{storeId}/items/{itemId}"]["get"]
 	if len(op.Parameters) != 2 {
 		t.Fatalf("expected 2 path parameters, got %d", len(op.Parameters))
 	}
@@ -201,6 +202,47 @@ router.post('/users', async (req, res) => {
 	}
 	if _, ok := path["post"]; !ok {
 		t.Error("expected 'post' operation for /users")
+	}
+}
+
+func TestFormatMethods_AnnotationsNotInDescription(t *testing.T) {
+	methods := []string{
+		`/*
+ * @summary Create a user
+ * @tags users
+ */
+router.post('/users', async (req, res) => {
+  res.status(201).json(newUser);
+});`,
+	}
+	result := FormatMethods(methods)
+
+	op := result["/users"]["post"]
+	if strings.Contains(op.Description, "@summary") {
+		t.Errorf("description should not contain @summary annotation, got: %q", op.Description)
+	}
+	if strings.Contains(op.Description, "@tags") {
+		t.Errorf("description should not contain @tags annotation, got: %q", op.Description)
+	}
+	if op.Summary != "Create a user" {
+		t.Errorf("expected summary 'Create a user', got %q", op.Summary)
+	}
+}
+
+func TestFormatMethods_PathNormalization(t *testing.T) {
+	methods := []string{
+		`/* Get item */
+router.get('/stores/:storeId/items/:itemId', async (req, res) => {
+  res.status(200).json(item);
+});`,
+	}
+	result := FormatMethods(methods)
+
+	if _, ok := result["/stores/{storeId}/items/{itemId}"]; !ok {
+		t.Error("expected OpenAPI-normalized path /stores/{storeId}/items/{itemId}")
+	}
+	if _, ok := result["/stores/:storeId/items/:itemId"]; ok {
+		t.Error("Express-style path /stores/:storeId/items/:itemId should not appear in output")
 	}
 }
 
