@@ -4,12 +4,22 @@ import (
 	"fmt"
 	"genApiDocGo/src/internal"
 	"regexp"
+	"sort"
 	"strings"
 )
 
-// regex to extract the route name and the type of http call.
+// regex to extract the route name and the type of http call (includes patch).
 var regex = regexp.MustCompile(
-	`\w+\.(get|post|put|delete)\((["'])([^"']+)(["'])`)
+	`\w+\.(get|post|put|delete|patch)\((["'])([^"']+)(["'])`)
+
+// regex to extract path parameters from a route string (e.g. :id, :userId).
+var pathParamRegex = regexp.MustCompile(`:(\w+)`)
+
+// regex to extract @summary annotation from doc comments.
+var summaryAnnotationRegex = regexp.MustCompile(`@summary\s+([^@]+)`)
+
+// regex to extract @tags annotation from doc comments.
+var tagsAnnotationRegex = regexp.MustCompile(`@tags\s+([^@]+)`)
 
 var responsesConfig map[string]string //nolint: gochecknoglobals // i need
 // regex to extract the request status.
@@ -37,11 +47,32 @@ type formatResult struct {
 	operationName string
 }
 
+// normalizePathParams converts Express-style path parameters (e.g. :id) to
+// OpenAPI-compliant template syntax (e.g. {id}).
+func normalizePathParams(path string) string {
+	return pathParamRegex.ReplaceAllString(path, `{$1}`)
+}
+
+// buildStatusRegex builds the status-code matching regexp from the provided
+// map in a deterministic order, quoting each key so custom configs with
+// special characters cannot break the regexp.
+func buildStatusRegex(m map[string]string) *regexp.Regexp {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for i, k := range keys {
+		keys[i] = regexp.QuoteMeta(k)
+	}
+	return regexp.MustCompile(fmt.Sprintf(`res\.status\((%s)\)`,
+		strings.Join(keys, "|")))
+}
+
 // Process each method individually and formats it.
 func formatMethod(method string) formatResult {
 	responsesConfig = internal.GetResponsesConfig()
-	statusRegex = regexp.MustCompile(fmt.Sprintf(`res\.status\((.{%s})\)`,
-		strings.Join(getKeys(responsesConfig), "|")))
+	statusRegex = buildStatusRegex(responsesConfig)
 	var result formatResult
 	lines := strings.Split(method, "\n")
 	pathDoc := make(map[string]internal.OperationDocument)
@@ -55,7 +86,22 @@ func formatMethod(method string) formatResult {
 			inDescription = true
 		}
 		if inDescription {
-			optDoc.Description += strings.Trim(line, "/*")
+			isAnnotation := false
+			if match := summaryAnnotationRegex.FindStringSubmatch(line); len(match) >= 2 {
+				optDoc.Summary = strings.TrimSpace(match[1])
+				isAnnotation = true
+			}
+			if match := tagsAnnotationRegex.FindStringSubmatch(line); len(match) >= 2 {
+				tags := strings.Split(strings.TrimSpace(match[1]), ",")
+				for i := range tags {
+					tags[i] = strings.TrimSpace(tags[i])
+				}
+				optDoc.Tags = tags
+				isAnnotation = true
+			}
+			if !isAnnotation {
+				optDoc.Description += strings.Trim(line, "/*")
+			}
 		}
 		if strings.Contains(line, "*/") {
 			inDescription = false
@@ -64,8 +110,10 @@ func formatMethod(method string) formatResult {
 		if !inDescription {
 			match := regex.FindStringSubmatch(line)
 			if len(match) >= internal.RegexHeaderLength {
-				result.pathName = match[3]
+				expressPath := match[3]
+				result.pathName = normalizePathParams(expressPath)
 				result.operationName = match[1]
+				optDoc.Parameters = extractPathParameters(expressPath)
 				pathDoc[result.operationName] = optDoc
 			}
 
@@ -90,6 +138,25 @@ func formatMethod(method string) formatResult {
 	return result
 }
 
+// extractPathParameters parses a route path and returns a ParameterDocument
+// for each Express path parameter (e.g. :id → {name:"id", in:"path", required:true}).
+func extractPathParameters(path string) []internal.ParameterDocument {
+	matches := pathParamRegex.FindAllStringSubmatch(path, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+	params := make([]internal.ParameterDocument, 0, len(matches))
+	for _, m := range matches {
+		params = append(params, internal.ParameterDocument{
+			Name:     m[1],
+			In:       "path",
+			Required: true,
+			Schema:   internal.SchemaDocument{Type: "string"},
+		})
+	}
+	return params
+}
+
 // Handle if exist a value in the map for the current key,
 // and adds the new value.
 func addElementInPathDoc(pathMap map[string]internal.PathDocument,
@@ -99,14 +166,4 @@ func addElementInPathDoc(pathMap map[string]internal.PathDocument,
 	} else {
 		pathMap[key] = pathDoc
 	}
-}
-
-// Function to get keys of the map, may be in the future can go to some internal
-// file, but for now it is only used here.
-func getKeys(m map[string]string) []string {
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-	return keys
 }
