@@ -10,13 +10,15 @@ import (
 	"testing/quick"
 )
 
+func init() {
+	internal.SetConfiguration("")
+}
+
 // TestE2E_FullPipeline exercises the complete pipeline:
 // GetFiles → GetContent → FormatMethods → WriteDocument.
 // It creates a temporary JS file with tagged routes and verifies
 // that a valid swagger.json is produced.
 func TestE2E_FullPipeline(t *testing.T) {
-	internal.SetConfiguration("")
-
 	dir := t.TempDir()
 	jsContent := `
 // @api_generate_doc
